@@ -277,7 +277,7 @@ export default function Home() {
             <ScriptSnippet
               websiteId="your-website-id"
               domain="https://yourwebsite.com"
-              src="https://insightica.vercel.app/analytics.js"
+              src={`${process.env.NEXT_PUBLIC_HOST_URL ?? "https://insightica-phi.vercel.app"}/analytics.js`}
             />
             <p className="mt-3 text-sm text-muted-foreground">
               Works anywhere HTML does: plain pages, React, Next.js, WordPress.

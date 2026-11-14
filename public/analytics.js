@@ -30,6 +30,12 @@
   const script = document.currentScript;
   if (!script) return;
 
+  // Report to whichever Insightica deployment served this script.
+  let apiBase = "https://insightica.vercel.app";
+  try {
+    apiBase = new URL(script.src).origin;
+  } catch (e) {}
+
   const websiteId = script.getAttribute("data-website-id");
   const domain = script.getAttribute("data-domain");
 
@@ -42,7 +48,7 @@
     const RefParams=window.location.href.split ('?')[1]||'';
 
   // ENTRY EVENT
-  fetch("https://insightica.vercel.app/api/track", {
+  fetch(apiBase + "/api/track", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -85,7 +91,7 @@
     pauseTracking();
 
     navigator.sendBeacon(
-      "https://insightica.vercel.app/api/track",
+      apiBase + "/api/track",
       JSON.stringify({
         type: "exit",
         websiteId,
@@ -101,7 +107,7 @@
   window.addEventListener("beforeunload", handleExit);
 
   const sendLivePing=()=>{
-    fetch("https://insightica.vercel.app/api/live", {
+    fetch(apiBase + "/api/live", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

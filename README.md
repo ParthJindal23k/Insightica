@@ -43,7 +43,7 @@ Copy `.env.example` to `.env` and fill in the values:
 
 | Variable | What it is |
 | --- | --- |
-| `NEXT_PUBLIC_NEON_DB_CONNECTION_STRING` | Neon Postgres connection string |
+| `NEON_DB_CONNECTION_STRING` | Neon Postgres connection string |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
 | `CLERK_SECRET_KEY` | Clerk secret key |
 | `NEXT_PUBLIC_HOST_URL` | URL the app is served from, e.g. `http://localhost:3000` |
