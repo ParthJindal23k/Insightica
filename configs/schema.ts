@@ -1,5 +1,5 @@
 import { time } from "console";
-import { uuid,boolean, integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import { uuid,boolean, integer, pgTable, varchar, uniqueIndex } from "drizzle-orm/pg-core";
 import { exit } from "process";
 export const usersTable = pgTable("users", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -46,7 +46,7 @@ export const pageViewTable= pgTable("pageViews", {
 export const liveUserTable=pgTable('liveUser',{
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     websiteId: varchar(),
-    visitorId: varchar().unique(),
+    visitorId: varchar(),
     last_seen: varchar(),
     city: varchar(),
     region: varchar(),
@@ -57,4 +57,4 @@ export const liveUserTable=pgTable('liveUser',{
     device: varchar(),
     os: varchar(),
     browser: varchar(),
-});
+},(t)=>[uniqueIndex('live_user_website_visitor_unique').on(t.websiteId, t.visitorId)]);

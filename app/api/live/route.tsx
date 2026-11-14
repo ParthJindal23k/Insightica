@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         browser: browserInfo,
       })
       .onConflictDoUpdate({
-        target: liveUserTable.visitorId,
+        target: [liveUserTable.websiteId, liveUserTable.visitorId],
         set: {
           last_seen,
           city,
