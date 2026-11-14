@@ -4,11 +4,12 @@ import React from "react";
 
 function Dashboardprovider({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="min-h-screen">
       <AppHeader />
-
-      <div className="px-10 md:px-28 lg:px-36 xl:px-48">{children}</div>
-    </>
+      <main className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
+        {children}
+      </main>
+    </div>
   );
 }
 

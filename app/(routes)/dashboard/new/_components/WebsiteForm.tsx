@@ -1,16 +1,11 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@radix-ui/react-separator";
-import React, { useState } from "react";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-  InputGroupText,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
-import { Globe, Loader, Loader2Icon, Plus } from "lucide-react";
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -21,216 +16,234 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { set } from "date-fns";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import CleanToast from "./CleanToast";
+
+// IANA names, so the server can bucket visits by the site's local day.
+const TIMEZONES: { region: string; zones: [string, string][] }[] = [
+  {
+    region: "Asia",
+    zones: [
+      ["Asia/Kolkata", "India (IST)"],
+      ["Asia/Dubai", "Gulf (GST)"],
+      ["Asia/Singapore", "Singapore (SGT)"],
+      ["Asia/Shanghai", "China (CST)"],
+      ["Asia/Tokyo", "Japan (JST)"],
+      ["Asia/Seoul", "Korea (KST)"],
+    ],
+  },
+  {
+    region: "Europe & Africa",
+    zones: [
+      ["Europe/London", "London (GMT/BST)"],
+      ["Europe/Berlin", "Central Europe (CET)"],
+      ["Europe/Athens", "Eastern Europe (EET)"],
+      ["Europe/Moscow", "Moscow (MSK)"],
+      ["Africa/Johannesburg", "South Africa (SAST)"],
+      ["Africa/Nairobi", "East Africa (EAT)"],
+    ],
+  },
+  {
+    region: "Americas",
+    zones: [
+      ["America/New_York", "US Eastern (ET)"],
+      ["America/Chicago", "US Central (CT)"],
+      ["America/Denver", "US Mountain (MT)"],
+      ["America/Los_Angeles", "US Pacific (PT)"],
+      ["America/Sao_Paulo", "Brasília (BRT)"],
+      ["America/Argentina/Buenos_Aires", "Argentina (ART)"],
+    ],
+  },
+  {
+    region: "Australia & Pacific",
+    zones: [
+      ["Australia/Perth", "Perth (AWST)"],
+      ["Australia/Sydney", "Sydney (AEST)"],
+      ["Pacific/Auckland", "New Zealand (NZST)"],
+    ],
+  },
+  { region: "Other", zones: [["UTC", "UTC"]] },
+];
+
+const cleanDomain = (value: string) =>
+  value
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .toLowerCase();
 
 function WebsiteForm() {
+  const router = useRouter();
   const [domain, setDomain] = useState("");
   const [timezone, setTimezone] = useState("");
   const [enableLocalHostTracking, setEnableLocalHostTracking] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState({
-    title: "",
-    description: "",
-  });
-  const router = useRouter();
-  const onFormSubmit = async (e: any) => {
+  const [needsUpgrade, setNeedsUpgrade] = useState(false);
+
+  // Preselect the visitor's own timezone when it is one we list.
+  useEffect(() => {
+    try {
+      const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const known = TIMEZONES.flatMap((g) => g.zones.map((z) => z[0]));
+      const match = local === "Asia/Calcutta" ? "Asia/Kolkata" : local;
+      if (known.includes(match)) setTimezone((tz) => tz || match);
+    } catch {
+      /* leave empty */
+    }
+  }, []);
+
+  const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // console.log({domain, timezone, enableLocalHostTracking});
-    setLoading(true);
-    const websiteId = crypto.randomUUID();
-    const result = await axios.post("/api/website", {
-      websiteId: websiteId,
-      domain,
-      timezone,
-      enableLocalHostTracking,
-    });
-    // console.log(result.data);
-    if (result.data.msg === "Upgrade to Pro to add more websites") {
-      setToastMessage({
-        title: "Upgrade to Pro",
-        description: "Your current plan allows only limited websites.",
-      });
-      setToastOpen(true);
-      setLoading(false);
+    if (!timezone) {
+      toast.error("Pick a timezone for this site.");
       return;
     }
-    if (result.data.data) {
+
+    setLoading(true);
+    setNeedsUpgrade(false);
+    const websiteId = crypto.randomUUID();
+    const fullDomain = "https://" + cleanDomain(domain);
+
+    try {
+      const result = await axios.post("/api/website", {
+        websiteId,
+        domain: fullDomain,
+        timezone,
+        enableLocalHostTracking,
+      });
+      const data = result.data;
+      const message: string | undefined = data?.message ?? data?.msg;
+
+      if (message?.toLowerCase().includes("upgrade")) {
+        setNeedsUpgrade(true);
+        return;
+      }
+
+      // "Domain already exists" returns the existing record in data.data
+      const saved = data?.data ?? (Array.isArray(data) ? data[0] : null);
+      if (message && !saved) {
+        toast.error(message);
+        return;
+      }
+
       router.push(
-        "/dashboard/new?step=script&websiteId=" +
-          result?.data?.data?.websiteId +
-          "&domain=" +
-          result?.data?.data?.domain
+        `/dashboard/new?step=script&websiteId=${saved?.websiteId ?? websiteId}` +
+          `&domain=${encodeURIComponent(saved?.domain ?? fullDomain)}`
       );
-    } else if (!result.data.message) {
-      router.push(
-        "/dashboard/new?step=script&websiteId=" +
-          websiteId +
-          "&domain=" +
-          domain
-      );
-    } else {
-      alert(result.data.message);
+    } catch {
+      toast.error("Couldn't add that website. Is the domain already in use?");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
   return (
     <div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Website</CardTitle>
-        </CardHeader>
-        <Separator />
-        <hr />
+      <h1 className="font-semibold text-4xl leading-tight tracking-tight">
+        Which site are we tracking?
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Two fields. Neither can be edited afterwards, so give them a second look.
+      </p>
 
-        <CardContent>
-          <form className="mt-5" onSubmit={(e) => onFormSubmit(e)}>
-            <label className="text-sm" htmlFor="domain">
-              Domain{" "}
+      <form
+        onSubmit={onFormSubmit}
+        className="mt-6 border border-border bg-card"
+      >
+        <div className="space-y-5 p-5 sm:p-6">
+          <div>
+            <label htmlFor="domain" className="text-sm font-medium">
+              Domain
             </label>
-            <InputGroup>
-              <InputGroupInput
-                type="text"
+            <div className="mt-1.5 flex h-10 items-center border border-input bg-background focus-within:border-foreground focus-within:ring-1 focus-within:ring-foreground">
+              <span className="num border-r border-input px-3 text-sm text-muted-foreground">
+                https://
+              </span>
+              <input
                 id="domain"
-                placeholder="mywebsite.com"
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="yourwebsite.com"
                 required
-                onChange={(e) => setDomain("https://" + e.target.value)}
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                onBlur={() => setDomain((d) => cleanDomain(d))}
+                className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground/70"
               />
-              <InputGroupAddon>
-                <Globe />
-                <span>https://</span>
-              </InputGroupAddon>
-            </InputGroup>
-            <div className="mt-5">
-              <label className="text-sm " htmlFor="timezone">
-                Timezone{" "}
-              </label>
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Just the domain — no path, no trailing slash.
+            </p>
+          </div>
 
-              <Select required onValueChange={(value) => setTimezone(value)}>
-                <SelectTrigger id="timezone" className="w-full">
-                  <SelectValue placeholder="Select a timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>North America</SelectLabel>
-                    <SelectItem value="est">
-                      Eastern Standard Time (EST)
-                    </SelectItem>
-                    <SelectItem value="cst">
-                      Central Standard Time (CST)
-                    </SelectItem>
-                    <SelectItem value="mst">
-                      Mountain Standard Time (MST)
-                    </SelectItem>
-                    <SelectItem value="pst">
-                      Pacific Standard Time (PST)
-                    </SelectItem>
-                    <SelectItem value="akst">
-                      Alaska Standard Time (AKST)
-                    </SelectItem>
-                    <SelectItem value="hst">
-                      Hawaii Standard Time (HST)
-                    </SelectItem>
+          <div>
+            <label htmlFor="timezone" className="text-sm font-medium">
+              Reporting timezone
+            </label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger id="timezone" className="mt-1.5 h-10 w-full bg-background">
+                <SelectValue placeholder="Select a timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((group) => (
+                  <SelectGroup key={group.region}>
+                    <SelectLabel>{group.region}</SelectLabel>
+                    {group.zones.map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Europe & Africa</SelectLabel>
-                    <SelectItem value="gmt">
-                      Greenwich Mean Time (GMT)
-                    </SelectItem>
-                    <SelectItem value="cet">
-                      Central European Time (CET)
-                    </SelectItem>
-                    <SelectItem value="eet">
-                      Eastern European Time (EET)
-                    </SelectItem>
-                    <SelectItem value="west">
-                      Western European Summer Time (WEST)
-                    </SelectItem>
-                    <SelectItem value="cat">
-                      Central Africa Time (CAT)
-                    </SelectItem>
-                    <SelectItem value="eat">East Africa Time (EAT)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Asia</SelectLabel>
-                    <SelectItem value="msk">Moscow Time (MSK)</SelectItem>
-                    <SelectItem value="ist">
-                      India Standard Time (IST)
-                    </SelectItem>
-                    <SelectItem value="cst_china">
-                      China Standard Time (CST)
-                    </SelectItem>
-                    <SelectItem value="jst">
-                      Japan Standard Time (JST)
-                    </SelectItem>
-                    <SelectItem value="kst">
-                      Korea Standard Time (KST)
-                    </SelectItem>
-                    <SelectItem value="ist_indonesia">
-                      Indonesia Central Standard Time (WITA)
-                    </SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Australia & Pacific</SelectLabel>
-                    <SelectItem value="awst">
-                      Australian Western Standard Time (AWST)
-                    </SelectItem>
-                    <SelectItem value="acst">
-                      Australian Central Standard Time (ACST)
-                    </SelectItem>
-                    <SelectItem value="aest">
-                      Australian Eastern Standard Time (AEST)
-                    </SelectItem>
-                    <SelectItem value="nzst">
-                      New Zealand Standard Time (NZST)
-                    </SelectItem>
-                    <SelectItem value="fjt">Fiji Time (FJT)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>South America</SelectLabel>
-                    <SelectItem value="art">Argentina Time (ART)</SelectItem>
-                    <SelectItem value="bot">Bolivia Time (BOT)</SelectItem>
-                    <SelectItem value="brt">Brasilia Time (BRT)</SelectItem>
-                    <SelectItem value="clt">
-                      Chile Standard Time (CLT)
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              &ldquo;Today&rdquo; in your charts starts at midnight in this timezone.
+            </p>
+          </div>
 
-            <div className="mt-5 flex items-center gap-2">
-              <Checkbox
-                onCheckedChange={(value: boolean) =>
-                  setEnableLocalHostTracking(value)
-                }
-              />
-              <span>Enable localhost tracking in development</span>
-            </div>
-            <div className="mt-4 w-full">
-              <Button className="w-full" disabled={loading} type="submit">
-                {loading ? (
-                  <Loader2Icon className="animate-spin" />
-                ) : (
-                  <Plus></Plus>
-                )}
-                Add Website
-              </Button>
-              {toastOpen && (
-                <CleanToast
-                  title={toastMessage.title}
-                  description={toastMessage.description}
-                  onClose={() => setToastOpen(false)}
-                />
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
+            <Checkbox
+              className="mt-0.5"
+              checked={enableLocalHostTracking}
+              onCheckedChange={(value) => setEnableLocalHostTracking(value === true)}
+            />
+            <span>
+              Track visits from localhost
+              <span className="block text-xs text-muted-foreground">
+                Handy while you test the install. Turn it off for clean numbers.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        {needsUpgrade && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-brand-soft/50 px-5 py-3 text-sm sm:px-6">
+            <span>The free plan tracks one website. Pro removes the limit.</span>
+            <Link
+              href="/dashboard/pricing"
+              className="font-medium underline underline-offset-4"
+            >
+              See plans
+            </Link>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end border-t border-border px-5 py-4 sm:px-6">
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex h-10 items-center gap-2 bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="h-4 w-4" />
+            )}
+            Continue to install
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

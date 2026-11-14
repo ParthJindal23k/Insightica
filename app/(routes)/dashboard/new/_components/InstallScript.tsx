@@ -1,80 +1,52 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight } from "lucide-react";
+import ScriptSnippet from "@/components/analytics/ScriptSnippet";
+import { getHostUrl } from "@/lib/host";
 
 export default function InstallScript() {
   const searchParams = useSearchParams();
-  const websiteId = searchParams.get("websiteId");
-  const domain = searchParams.get("domain");
-
-  const [copied, setCopied] = useState(false);
-
-  const script = `<script
-  defer
-  data-website-id="${websiteId}"
-  data-domain="${domain}"
-  src="${process.env.NEXT_PUBLIC_HOST_URL}/analytics.js">
-</script>`;
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(script);
-    setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 1500);
-  };
+  const websiteId = searchParams.get("websiteId") ?? "";
+  const domain = searchParams.get("domain") ?? "";
 
   return (
-    <Card className="max-w-xl mx-auto">
-      <CardHeader>
-        <CardTitle>Install the WebTrack Script</CardTitle>
-        <p className="text-sm text-muted-foreground mt-4">
-          Copy and paste this into the <code>&lt;head&gt;</code> of your website
+    <div>
+      <h1 className="font-semibold text-4xl leading-tight tracking-tight">
+        Paste this into your site.
+      </h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        Put it inside the{" "}
+        <code className="bg-muted px-1 py-0.5 font-mono text-xs text-foreground">
+          &lt;head&gt;
+        </code>{" "}
+        of every page on{" "}
+        <span className="text-foreground">{domain.replace("https://", "")}</span>
+        . It loads with <code className="font-mono text-xs">defer</code>, so it
+        never blocks rendering.
+      </p>
+
+      <ScriptSnippet
+        className="mt-6"
+        websiteId={websiteId}
+        domain={domain}
+        src={`${getHostUrl()}/analytics.js`}
+      />
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border border-border bg-card px-5 py-4">
+        <p className="max-w-xs text-sm text-muted-foreground">
+          Open your site in another tab after deploying. You should appear as a
+          live visitor within ten seconds.
         </p>
-      </CardHeader>
-
-      <CardContent>
-        <pre
-          className="
-    relative rounded-lg p-4 text-sm leading-relaxed overflow-x-auto
-    bg-slate-100 text-green-600
-    dark:bg-slate-900 dark:text-green-400
-    border border-slate-200 dark:border-slate-700
-    transition-colors duration-200
-  "
+        <Link
+          href={`/dashboard/website/${websiteId}`}
+          className="inline-flex h-9 items-center gap-2 bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
         >
-          {script}
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleCopy}
-            className="
-      absolute top-2 right-2
-      text-slate-500
-      hover:text-slate-800
-      hover:bg-slate-200
-      dark:text-slate-400
-      dark:hover:text-slate-100
-      dark:hover:bg-slate-800
-      transition-colors
-    "
-            aria-label="Copy script"
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-          </Button>
-        </pre>
-
-        {/* <Button className="w-full mt-4">
-          Ok, I’ve installed the script
-        </Button> */}
-      </CardContent>
-    </Card>
+          Open analytics
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
   );
 }

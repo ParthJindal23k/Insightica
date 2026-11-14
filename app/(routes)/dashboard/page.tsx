@@ -2,18 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
+import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import WebsiteCard from "./_components/WebsiteCard";
 import { WebsiteInfoType } from "@/configs/type";
-import { Plus, Globe } from "lucide-react";
 
 function Dashboard() {
+  const { user } = useUser();
   const [websiteList, setWebsiteList] = useState<WebsiteInfoType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     GetUserWebsites();
@@ -22,124 +22,117 @@ function Dashboard() {
   const GetUserWebsites = async () => {
     try {
       setLoading(true);
+      setFailed(false);
       const result = await axios.get("/api/website");
-      setWebsiteList(result.data);
+      setWebsiteList(Array.isArray(result.data) ? result.data : []);
+    } catch {
+      setFailed(true);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="mt-8 pb-10">
-      {/* ✅ Container */}
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 space-y-6">
-        {/* ✅ Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              My Websites
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Manage your tracked websites and view analytics at a glance.
-            </p>
-          </div>
+  const count = websiteList.length;
 
-          <Link href="/dashboard/new" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto rounded-xl">
-              <Plus className="h-4 w-4" />
-              <span className="ml-2">Add Website</span>
-            </Button>
-          </Link>
+  return (
+    <div className="pt-10">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="font-semibold text-4xl leading-none tracking-tight sm:text-5xl">
+            {user?.firstName ? `${user.firstName}'s websites` : "Your websites"}
+          </h1>
         </div>
 
-        {/* ✅ Loading State */}
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div
-                key={item}
-                className="
-                  rounded-2xl border bg-card shadow-sm
-                  p-5 space-y-4
-                "
-              >
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-[55%] rounded-md" />
-                    <Skeleton className="h-3 w-[35%] rounded-md" />
-                  </div>
-                </div>
+        <Link
+          href="/dashboard/new"
+          className="inline-flex h-9 items-center gap-2 bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" />
+          Add website
+        </Link>
+      </div>
 
-                <Skeleton className="h-[92px] w-full rounded-xl" />
+      {loading && (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-[206px] animate-pulse border border-border bg-card" />
+          ))}
+        </div>
+      )}
 
-                <div className="flex justify-between gap-2">
-                  <Skeleton className="h-8 w-[32%] rounded-xl" />
-                  <Skeleton className="h-8 w-[32%] rounded-xl" />
-                  <Skeleton className="h-8 w-[32%] rounded-xl" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ✅ Empty State */}
-        {!loading && websiteList.length === 0 && (
-          <div
-            className="
-              mt-6 overflow-hidden rounded-2xl border bg-card shadow-sm
-            "
+      {!loading && failed && (
+        <div className="mt-6 border border-border bg-card px-6 py-10 text-center">
+          <p className="font-semibold text-2xl">We couldn&apos;t load your websites</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Check your connection and try again.
+          </p>
+          <button
+            onClick={GetUserWebsites}
+            className="mt-4 h-9 border border-input px-4 text-sm transition-colors hover:bg-secondary"
           >
-            <div className="relative p-8 sm:p-12 text-center">
-              {/* subtle background glow */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-amber-400/10" />
+            Retry
+          </button>
+        </div>
+      )}
 
-              <div className="relative mx-auto flex max-w-lg flex-col items-center gap-4">
-                <div className="grid place-items-center rounded-2xl border bg-background p-4 shadow-sm">
-                  <Image
-                    src={"/website.png"}
-                    alt="Add website"
-                    height={90}
-                    width={90}
-                    className="opacity-95"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="text-lg sm:text-xl font-semibold">
-                    No websites added yet
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Add your first website to start tracking visitors, sessions
-                    and performance insights.
-                  </p>
-                </div>
-
-                <Link href="/dashboard/new" className="w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto rounded-xl mt-2">
-                    <Plus className="h-4 w-4" />
-                    <span className="ml-2">Add Website</span>
-                  </Button>
-                </Link>
-
-                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Globe className="h-4 w-4" />
-                  Setup takes less than 2 minutes
-                </div>
-              </div>
+      {!loading && !failed && count === 0 && (
+        <div className="mt-6 grid overflow-hidden border border-border bg-card md:grid-cols-[1.1fr_1fr]">
+          <div className="p-8 sm:p-10">
+            <h2 className="font-semibold text-3xl leading-tight sm:text-4xl">
+              Add the first site you want to understand.
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Give us a domain and a timezone. You&apos;ll get one script tag to
+              paste into your page, and visits start showing up here within
+              seconds.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <Link
+                href="/dashboard/new"
+                className="inline-flex h-10 items-center gap-2 bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" />
+                Add website
+              </Link>
+              <Link
+                href="/demo"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                or look at the demo first
+              </Link>
             </div>
           </div>
-        )}
+          <ol className="border-t border-border bg-muted/40 p-8 text-sm sm:p-10 md:border-l md:border-t-0">
+            {[
+              ["1", "Add your domain", "Takes about a minute."],
+              ["2", "Paste one script tag", "Any stack — plain HTML, React, Next.js, WordPress."],
+              ["3", "Watch visits arrive", "Sources, locations, devices and live users."],
+            ].map(([n, title, body]) => (
+              <li key={n} className="flex gap-4 border-b border-border py-4 first:pt-0 last:border-0 last:pb-0">
+                <span className="num text-xs text-muted-foreground">{n}</span>
+                <div>
+                  <p className="font-medium">{title}</p>
+                  <p className="mt-0.5 text-muted-foreground">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
-        {/* ✅ Website Grid */}
-        {!loading && websiteList.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {websiteList.map((website, index) => (
-              <WebsiteCard key={index} websiteInfo={website} />
+      {!loading && !failed && count > 0 && (
+        <>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <span className="num text-foreground">{count}</span>{" "}
+            {count === 1 ? "site" : "sites"} tracked
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {websiteList.map((website) => (
+              <WebsiteCard key={website.website.websiteId} websiteInfo={website} />
             ))}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
-import { SignIn } from '@clerk/nextjs'
+import { SignIn } from "@clerk/nextjs";
+import AuthShell from "@/app/_components/AuthShell";
 
 export default function Page() {
-    return (
-        <div className='flex items-center justify-center h-screen'>
-            <SignIn />
-        </div>
-    )
+  return (
+    <AuthShell>
+      <SignIn />
+    </AuthShell>
+  );
 }
