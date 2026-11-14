@@ -1,4 +1,4 @@
-import { PricingTable } from "@clerk/nextjs";
+import PricingBoundary from "./PricingBoundary";
 import React from "react";
 
 function Pricing() {
@@ -15,7 +15,7 @@ function Pricing() {
       </div>
 
       <div className="mx-auto mt-8 max-w-4xl">
-        <PricingTable />
+        <PricingBoundary />
       </div>
     </div>
   );

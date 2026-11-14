@@ -50,8 +50,14 @@ export async function POST(req: NextRequest) {
       "127.0.0.1";
 
     /* ---------- Geo Lookup ---------- */
-    const geoRes = await fetch(`https://ip-api.com/json/${ip}`);
-    const geoInfo = await geoRes.json();
+    // ip-api's free tier is http only. A failed lookup must not drop the ping.
+    let geoInfo: any = {};
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
+      geoInfo = await geoRes.json();
+    } catch {
+      geoInfo = {};
+    }
 
     const country = geoInfo.country || "";
     const countryCode =

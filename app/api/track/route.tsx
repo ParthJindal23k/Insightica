@@ -54,8 +54,12 @@ export async function POST(req: NextRequest) {
     const ip =getClientIp(req) || "127.0.0.1";
     let geoInfo=null
     if(ip && !ip.startsWith("10.") && !ip.startsWith("192.168.")){
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
-        geoInfo = await geoRes.json();
+        try {
+          const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
+          geoInfo = await geoRes.json();
+        } catch {
+          geoInfo = null;
+        }
     }
     // console.log("Device Info: ", deviceInfo);
     // console.log("OS Info: ", osInfo);
@@ -85,10 +89,10 @@ export async function POST(req: NextRequest) {
           device: deviceInfo || "Unknown",
           os: osInfo || "Unknown",
           browser: browserInfo || "Unknown",
-          city: geoInfo.city || "Unknown",
-          region: geoInfo.regionName || "Unknown",
-          country: geoInfo.country || "Unknown",
-          countryCode: geoInfo.countryCode || "Unknown",
+          city: geoInfo?.city || "Unknown",
+          region: geoInfo?.regionName || "Unknown",
+          country: geoInfo?.country || "Unknown",
+          countryCode: geoInfo?.countryCode || "Unknown",
           ipAddress: ip || "Unknown",
           refParams: body.refParams,
         })
