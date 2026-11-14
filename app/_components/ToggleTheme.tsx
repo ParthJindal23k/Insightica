@@ -21,9 +21,9 @@ export default function ToggleTheme() {
     >
       {mounted ? (
         isDark ? (
-          <Sun className="h-4 w-4" />
+          <Sun className="tick h-4 w-4" />
         ) : (
-          <Moon className="h-4 w-4" />
+          <Moon className="tick h-4 w-4" />
         )
       ) : (
         <span className="h-4 w-4" />

@@ -33,7 +33,7 @@ function WebsiteCard({ websiteInfo }: Props) {
   return (
     <Link
       href={`/dashboard/website/${websiteInfo?.website?.websiteId}`}
-      className="group flex flex-col border border-border bg-card transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="press group flex flex-col border border-border bg-card hover:border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <div className="flex items-start justify-between gap-3 px-5 pt-5">
         <div className="flex min-w-0 items-center gap-2.5">

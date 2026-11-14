@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { ArrowRight, Check } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 import ScriptSnippet from "@/components/analytics/ScriptSnippet";
 import { demoAnalytics } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
+import { Marquee, Reveal, WordRise } from "./_components/Motion";
 
 const FEATURES = [
   {
@@ -94,18 +95,27 @@ function CtaLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex h-12 items-center gap-2 border border-line bg-brand px-6 text-[15px] font-semibold text-black transition-colors hover:bg-foreground hover:text-background",
+        "press group inline-flex h-12 items-center gap-2 border border-line bg-brand px-6 text-[15px] font-semibold text-black",
         className
       )}
     >
       {children}
-      <ArrowRight className="h-4 w-4" />
+      <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
     </Link>
   );
 }
 
 export default function Home() {
   const { user, isLoaded } = useUser();
+  const [live, setLive] = useState(14);
+
+  // The sample dashboard's live counter drifts like a real one.
+  useEffect(() => {
+    const id = setInterval(() => {
+      setLive((n) => Math.min(24, Math.max(8, n + (Math.random() > 0.5 ? 1 : -1))));
+    }, 3200);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="min-h-screen overflow-x-clip">
@@ -116,16 +126,16 @@ export default function Home() {
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm md:flex">
-            <a href="#features" className="hover:underline hover:underline-offset-4">
+            <a href="#features" className="nav-link">
               Features
             </a>
-            <a href="#install" className="hover:underline hover:underline-offset-4">
+            <a href="#install" className="nav-link">
               Install
             </a>
-            <a href="#pricing" className="hover:underline hover:underline-offset-4">
+            <a href="#pricing" className="nav-link">
               Pricing
             </a>
-            <Link href="/demo" className="hover:underline hover:underline-offset-4">
+            <Link href="/demo" className="nav-link">
               Demo
             </Link>
           </nav>
@@ -157,7 +167,10 @@ export default function Home() {
       {/* Hero */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-12 pt-14 sm:px-6 sm:pb-16 sm:pt-24">
         <h1 className="max-w-4xl text-[clamp(2.5rem,8.2vw,5.75rem)] font-semibold leading-[0.98]">
-          See who visits your site.
+          <WordRise text="See who visits" />{" "}
+          <span className="marker">
+            <WordRise text="your site." />
+          </span>
         </h1>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[1.25fr_1fr] lg:items-end">
@@ -211,7 +224,7 @@ export default function Home() {
             <Overview
               analytics={demoAnalytics}
               analyticType="hourly"
-              liveUserCount={14}
+              liveUserCount={live}
               deltas={{ visitors: 12.4, pageViews: 8.1, totalActive: 5.6, avgActive: -2.3 }}
               chartHeightClass="h-[220px] sm:h-[300px]"
             />
@@ -232,8 +245,23 @@ export default function Home() {
         </p>
       </section>
 
+      <div className="mt-20 sm:mt-28">
+        <Marquee
+          items={[
+            "No cookies",
+            "3.3 kB script",
+            "Live visitors",
+            "Sources",
+            "Countries and cities",
+            "Devices and browsers",
+            "1 script tag",
+          ]}
+        />
+      </div>
+
       {/* Features */}
       <section id="features" className="mx-auto w-full max-w-6xl scroll-mt-14 px-4 py-20 sm:px-6 sm:py-28">
+        <Reveal>
         <h2 className="max-w-2xl text-3xl font-semibold leading-[1.05] sm:text-5xl">
           Answer 6 questions about your traffic.
         </h2>
@@ -241,13 +269,16 @@ export default function Home() {
           We left out funnels, heatmaps and custom dimensions on purpose. Most
           sites need to know these things, and little else.
         </p>
+        </Reveal>
 
         <div className="mt-12 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="border-t border-line pt-4">
-              <h3 className="text-lg font-semibold tracking-tight">{f.title}</h3>
-              <p className="mt-2 leading-relaxed text-muted-foreground">{f.body}</p>
-            </div>
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 3) * 90}>
+              <div className="rule h-full border-t border-line pt-4">
+                <h3 className="text-lg font-semibold tracking-tight">{f.title}</h3>
+                <p className="mt-2 leading-relaxed text-muted-foreground">{f.body}</p>
+              </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -275,6 +306,7 @@ export default function Home() {
 
           <div className="min-w-0 lg:pt-2">
             <ScriptSnippet
+              typed
               websiteId="your-website-id"
               domain="https://yourwebsite.com"
               src={`${process.env.NEXT_PUBLIC_HOST_URL ?? "https://insightica-phi.vercel.app"}/analytics.js`}
@@ -288,9 +320,11 @@ export default function Home() {
 
       {/* Pricing */}
       <section id="pricing" className="mx-auto w-full max-w-6xl scroll-mt-14 px-4 py-20 sm:px-6 sm:py-28">
-        <h2 className="max-w-2xl text-3xl font-semibold leading-[1.05] sm:text-5xl">
-          Pay nothing for your first site.
-        </h2>
+        <Reveal>
+          <h2 className="max-w-2xl text-3xl font-semibold leading-[1.05] sm:text-5xl">
+            Pay nothing for your first site.
+          </h2>
+        </Reveal>
 
         <div className="mt-10 grid border border-line md:grid-cols-2">
           {PLANS.map((plan) => (
@@ -320,10 +354,10 @@ export default function Home() {
               <Link
                 href={plan.href}
                 className={cn(
-                  "mt-8 inline-flex h-12 items-center justify-center border border-line px-5 text-[15px] font-semibold transition-colors",
+                  "press mt-8 inline-flex h-12 items-center justify-center border border-line px-5 text-[15px] font-semibold",
                   plan.primary
                     ? "bg-foreground text-background hover:bg-brand hover:text-black"
-                    : "hover:bg-foreground hover:text-background"
+                    : "hover:bg-brand hover:text-black"
                 )}
               >
                 {plan.cta}
@@ -341,10 +375,10 @@ export default function Home() {
           </h2>
           <Link
             href="/dashboard"
-            className="inline-flex h-12 shrink-0 items-center gap-2 bg-black px-6 text-[15px] font-semibold text-white transition-opacity hover:opacity-85"
+            className="press group inline-flex h-12 shrink-0 items-center gap-2 border border-black bg-black px-6 text-[15px] font-semibold text-white [--line:#0c0c0c] hover:bg-white hover:text-black"
           >
             {user ? "Open your dashboard" : "Add your first site"}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
         </div>
       </section>

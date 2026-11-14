@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/use-in-view";
 
 export type BreakdownRow = {
   name: string;
@@ -30,6 +31,7 @@ export default function BreakdownPanel({
 }: Props) {
   const [active, setActive] = useState(tabs[0]?.key);
   const tab = tabs.find((t) => t.key === active) ?? tabs[0];
+  const { ref, inView } = useInView<HTMLElement>(0.3);
 
   const { rows, total, max } = useMemo(() => {
     const sorted = [...(tab?.rows ?? [])]
@@ -43,7 +45,7 @@ export default function BreakdownPanel({
   }, [tab, limit]);
 
   return (
-    <section className="flex flex-col border border-border bg-card">
+    <section ref={ref} className="flex flex-col border border-border bg-card">
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h3 className="text-sm font-medium">{title}</h3>
         <div role="tablist" className="flex items-center gap-3">
@@ -90,18 +92,22 @@ export default function BreakdownPanel({
           </div>
         ) : (
           <ul key={tab?.key}>
-            {rows.map((row) => {
+            {rows.map((row, i) => {
               const share = total > 0 ? (row.uv / total) * 100 : 0;
               const width = max > 0 ? Math.max((row.uv / max) * 100, 2) : 0;
               return (
                 <li
                   key={row.name}
-                  className="group relative flex h-8 items-center justify-between gap-3 px-2 text-sm"
+                  className="group relative flex h-8 items-center justify-between gap-3 px-2 text-sm transition-colors hover:bg-muted"
                 >
                   <span
                     aria-hidden
-                    className="absolute inset-y-0.5 left-0 bg-brand-soft dark:bg-brand-soft"
-                    style={{ width: `${width}%` }}
+                    className="absolute inset-y-0.5 left-0 origin-left bg-brand-soft transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+                    style={{
+                      width: `${width}%`,
+                      transform: inView ? "scaleX(1)" : "scaleX(0)",
+                      transitionDelay: `${i * 55}ms`,
+                    }}
                   />
                   <span className="relative flex min-w-0 items-center gap-2">
                     {row.icon}

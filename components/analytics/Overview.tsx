@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { AnalyticsType } from "@/configs/type";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/use-in-view";
 
 type Deltas = {
   visitors: number | null;
@@ -122,7 +123,7 @@ export function LivePill({ count }: { count: number }) {
           )}
         />
       </span>
-      <span className="num font-medium">{count}</span>
+      <span key={count} className="num tick font-medium">{count}</span>
       <span className="text-muted-foreground">
         {count === 1 ? "person" : "people"} on the site now
       </span>
@@ -139,6 +140,7 @@ export default function Overview({
   chartHeightClass = "h-[260px] sm:h-[320px]",
 }: Props) {
   const isLoading = loading || !analytics;
+  const { ref: chartRef, inView: chartInView } = useInView<HTMLDivElement>(0.3);
 
   const visitors = Number(analytics?.totalVisitors ?? 0);
   const pageViews = Number(analytics?.totalSessions ?? 0);
@@ -212,7 +214,7 @@ export default function Overview({
         />
       </div>
 
-      <div className="border-t border-border px-2 pb-3 pt-4 sm:px-4">
+      <div ref={chartRef} className="border-t border-border px-2 pb-3 pt-4 sm:px-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-2">
           <h3 className="text-sm font-medium">
             Visitors{" "}
@@ -225,6 +227,8 @@ export default function Overview({
 
         {isLoading ? (
           <div className={cn("animate-pulse bg-muted", chartHeightClass)} />
+        ) : !chartInView ? (
+          <div className={chartHeightClass} />
         ) : !hasPoints ? (
           <div className={cn("grid place-items-center", chartHeightClass)}>
             <div className="text-center">
@@ -277,7 +281,8 @@ export default function Overview({
                 stroke="var(--chart-1)"
                 strokeWidth={2}
                 activeDot={{ r: 4, strokeWidth: 0 }}
-                isAnimationActive={false}
+                animationDuration={1300}
+                animationEasing="ease-out"
               />
             </AreaChart>
           </ChartContainer>

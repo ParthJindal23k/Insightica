@@ -184,3 +184,179 @@
   line-height: 1.3;
   color: var(--muted-foreground);
 }
+
+/* ---------- Motion ---------- */
+
+/* Scroll reveal: one short slide, once */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.45s ease-out,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Headline words rising from behind a mask */
+.word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.08em;
+}
+.word > span {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: word-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes word-up {
+  to {
+    transform: none;
+  }
+}
+
+/* Marker stroke drawn under a phrase */
+.marker {
+  background: linear-gradient(var(--brand), var(--brand)) no-repeat 0 92% / 0% 0.16em;
+  animation: marker 0.6s 0.75s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+@keyframes marker {
+  to {
+    background-size: 100% 0.16em;
+  }
+}
+
+/* Marquee strip */
+.marquee {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+.marquee-row {
+  display: flex;
+  flex-shrink: 0;
+  animation: marquee 28s linear infinite;
+}
+.marquee:hover .marquee-row {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Hard-shadow lift for buttons and cards */
+.press {
+  transition:
+    transform 0.14s ease-out,
+    box-shadow 0.14s ease-out,
+    background-color 0.14s,
+    color 0.14s;
+}
+.press:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 4px 4px 0 var(--line);
+}
+.press:active {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Line that draws across the top of an item on hover */
+.rule {
+  position: relative;
+}
+.rule::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 3px;
+  width: 100%;
+  background: var(--brand);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.rule:hover::before {
+  transform: scaleX(1);
+}
+
+/* Code lines typed out one after another */
+.type-line {
+  clip-path: inset(0 100% 0 0);
+}
+.typing .type-line {
+  animation: type-in 0.45s steps(22, end) forwards;
+  animation-delay: calc(var(--n) * 0.32s);
+}
+@keyframes type-in {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  vertical-align: text-bottom;
+  background: var(--brand);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* A number that changed */
+.tick {
+  display: inline-block;
+  animation: tick 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes tick {
+  from {
+    transform: translateY(-60%);
+    opacity: 0;
+  }
+}
+
+/* Nav links: underline grows from the left */
+.nav-link {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0% 2px;
+  transition: background-size 0.25s ease-out;
+  padding-bottom: 3px;
+}
+.nav-link:hover {
+  background-size: 100% 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .word > span,
+  .type-line {
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+    animation: none;
+    transition: none;
+  }
+  .marker {
+    animation: none;
+    background-size: 100% 0.16em;
+  }
+  .marquee-row,
+  .caret,
+  .tick {
+    animation: none;
+  }
+  .press,
+  .rule::before {
+    transition: none;
+  }
+}

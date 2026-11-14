@@ -3,12 +3,15 @@
 import React, { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/use-in-view";
 
 type Props = {
   websiteId: string;
   domain: string;
   src: string;
   className?: string;
+  /** Type the lines out when the block scrolls into view. */
+  typed?: boolean;
 };
 
 export function buildScript({ websiteId, domain, src }: Omit<Props, "className">) {
@@ -28,8 +31,13 @@ const Attr = ({ name, value }: { name: string; value: string }) => (
   </div>
 );
 
-export default function ScriptSnippet({ websiteId, domain, src, className }: Props) {
+export default function ScriptSnippet({ websiteId, domain, src, className, typed }: Props) {
   const [copied, setCopied] = useState(false);
+  const { ref, inView } = useInView<HTMLDivElement>(0.5);
+  const line = (n: number) =>
+    typed
+      ? { className: "type-line", style: { "--n": n } as React.CSSProperties }
+      : {};
 
   const copy = async () => {
     try {
@@ -43,7 +51,9 @@ export default function ScriptSnippet({ websiteId, domain, src, className }: Pro
 
   return (
     <div
+      ref={ref}
       className={cn(
+        typed && inView && "typing",
         "overflow-hidden border border-[#2c2c29] bg-[#0c0c0c] text-[#f2f2ee]",
         className
       )}
@@ -63,23 +73,32 @@ export default function ScriptSnippet({ websiteId, domain, src, className }: Pro
       </div>
       <pre className="overflow-x-auto px-4 py-4 font-mono text-[13px] leading-6">
         <code>
-          <div>
+          <div {...line(0)}>
             <span className="text-[#8b8b86]">&lt;</span>
             <span className="text-[#ffd60a]">script</span>
           </div>
-          <div className="pl-4 text-[#f2f2ee]">defer</div>
-          <Attr name="data-website-id" value={websiteId} />
-          <Attr name="data-domain" value={domain} />
-          <div className="pl-4">
-            <span className="text-[#f2f2ee]">src</span>
-            <span className="text-[#8b8b86]">=</span>
-            <span className="text-[#9be3b8]">&quot;{src}&quot;</span>
-            <span className="text-[#8b8b86]">&gt;</span>
+          <div {...line(1)}>
+            <div className="pl-4 text-[#f2f2ee]">defer</div>
           </div>
-          <div>
+          <div {...line(2)}>
+            <Attr name="data-website-id" value={websiteId} />
+          </div>
+          <div {...line(3)}>
+            <Attr name="data-domain" value={domain} />
+          </div>
+          <div {...line(4)}>
+            <div className="pl-4">
+              <span className="text-[#f2f2ee]">src</span>
+              <span className="text-[#8b8b86]">=</span>
+              <span className="text-[#9be3b8]">&quot;{src}&quot;</span>
+              <span className="text-[#8b8b86]">&gt;</span>
+            </div>
+          </div>
+          <div {...line(5)}>
             <span className="text-[#8b8b86]">&lt;/</span>
             <span className="text-[#ffd60a]">script</span>
             <span className="text-[#8b8b86]">&gt;</span>
+            {typed && <span className="caret ml-1" />}
           </div>
         </code>
       </pre>
