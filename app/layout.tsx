@@ -35,6 +35,14 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
+        layout: { socialButtonsVariant: "blockButton" },
+        elements: {
+          // Google and email only
+          socialButtonsBlockButton__facebook: { display: "none" },
+          socialButtonsBlockButton__google: { width: "100%" },
+          socialButtons: { display: "block" },
+          socialButtonsIconButton__facebook: { display: "none" },
+        },
         variables: {
           colorPrimary: "#0c0c0c",
           borderRadius: "0px",
